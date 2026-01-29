@@ -10,8 +10,8 @@
 
 // For the provided libraries
 #include <proj1/lib/timings.h> // For getting my threads to wait
-#include <proj1/lib/cli_parser.h> // 
-#include <proj1/lib/thread_log.h> // For displaying; used like a print statement
+#include <proj1/lib/cli_parser.h> // For parsing the command line
+#include <proj1/lib/thread_log.h> // For displaying statements. Used like a print statement
 #include <proj1/lib/sha256.h>  // For output and doing the math
 
 
@@ -20,7 +20,7 @@ using namespace std;
 // Structure for the data of my threads
 struct ThreadsArg {
     int index;  // The ID
-    int* k_ptr;  // The active threads
+    int* k_ptr;  // The active thread pointer
     bool* released_flags;  // Pointer for flagged array
 
     CliMode mode;  // For releasing of threads
@@ -113,7 +113,7 @@ int main (int argc, char* argv[]) {
     int n = ::get_nprocs();
     int k = 0;
 
-    // Threads pointer created. Took this from class earlier
+    // Using vector to create the threadpool. Took this from class earlier
     std::vector<pthread_t> threads(n + 1);
     bool* released_flags = new bool[n + 1];
 
@@ -121,6 +121,7 @@ int main (int argc, char* argv[]) {
         released_flags[i] = false;
     }
 
+    // This for loop creates all threads and make them wait
     for (int i = 1; i <= n; ++i) {
         ThreadsArg* args = new ThreadsArg{i, &k, released_flags, mode, &file_rows};
         pthread_create(&threads[i], nullptr, ThreadRoutine, args);

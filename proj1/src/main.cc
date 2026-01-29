@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <fstream>  // For handling my files
+#include <sys/sysinfo.h>  // Used this for the get_nprocs
 
 // For the provided libraries
 #include <proj1/lib/timings.h> // For getting my threads to wait
@@ -19,7 +20,7 @@ using namespace std;
 // Structure for the data of my threads
 struct ThreadsArg {
     int index;  // The ID
-    int k;  // The active threads
+    int* k_ptr;  // The active threads
     bool* released_flags;  // Pointer for flagged array
 
     CliMode mode;  // For releasing of threads
@@ -27,13 +28,6 @@ struct ThreadsArg {
 
 };
 
-
-struct Row {
-
-    std::string ids;
-    std::string values;
-    std::size_t iterations;
-};
 
 // Function for what the pthreads execute
 void ThreadRoutine (void* arg) {
@@ -44,26 +38,27 @@ void ThreadRoutine (void* arg) {
     // My local variables for connecting my variables through member access operators (arrows)
     // Used cppreference for this part to understand what I was doing
     int my_id = data->index;
-    int limit = data->k;
     bool* flags = data->released_flags;
     CliMode mode = data->mode;
     
 
-
     // Make threads wait until released
-    while (!flags[limit]) {
+    while (!flags[my_id]) {
         Timings_SleepMs(1);
     }
 
     std::cout << my_id << "'s Starting Routine" << std::endl;
 
+
+    int current_k = *data->k_ptr;
+
     // If the index is higher than k it exits immediately
-    if (my_id > limit) {
+    if (my_id > current_k) {
         return nullptr;
     }
 
     // Goes from thread to thread
-    if (mode == CLI_MODE_THREAD && my_id < limit) {
+    if (mode == CLI_MODE_THREAD && my_id < current_k) {
         flags[limit + 1] = true;
     }
 
@@ -85,7 +80,7 @@ void ThreadRoutine (void* arg) {
         char results[65]; // Turns the data into a hexademical 
         // Becoming 64 characters long w/ a null terminator at the end
 
-        ComputeIterativeSha256Hex(uint8_t*)rows[row_ind].c_str(), rows[row_ind].length(), 100000, results;
+        ComputeIterativeSha256Hex((uint8_t*)rows[row_ind].c_str(), rows[row_ind].length(), 100000, results);
 
         ThreadLog("Thread %d processing row %d", my_id, row_ind);
     }
@@ -98,12 +93,13 @@ void ThreadRoutine (void* arg) {
 // Main function
 int main (int argc, char* argv[]) {
 
-    // My variables
+    
     CliMode mode ;
-    uint32_t timeout_ms;
-    CliParse(argc, argv, &mode, &timeout_ms);
+    uint32_t timeout_ms;  // 
+    CliParse(argc, argv, &mode, &timeout_ms);  // For parsing the command line
 
     
+    // Reads the file data from STDIN in rows
     std::vector<std::string> file_rows;
     std::string line;
 
@@ -114,30 +110,29 @@ int main (int argc, char* argv[]) {
     }
 
     // The number of cores
-    int ncores = sysconf(_SC_NPROCESSORS_ONLN);
+    int n = ::get_nprocs();
+    int k = 0;
 
-    // Thread pointer created
-    pthread_t* threads = new pthread_t[n + 1];
+    // Threads pointer created. Took this from class earlier
+    std::vector<pthread_t> threads(n + 1);
     bool* released_flags = new bool[n + 1];
 
-    for (int i = 0; i <= n; ++i) {
+    for (int i = 0; i <= num; ++i) {
         released_flags[i] = false;
     }
 
     for (int i = 1; i <= n; ++i) {
-        ThreadsArg* args = new ThreadsArg{i, 0, released_flags, mode, &file_rows};
+        ThreadsArg* args = new ThreadsArg{i, &k, released_flags, mode, &file_rows};
         pthread_create(&threads[i], nullptr, ThreadRoutine, args);
     }
 
     // Sets up prompt for K with tty
     std::ifstream tty("/dev/tty");
-
-    int k;
-
-    std::cout << "Enter the max amount of threads 1-" << n << " :";
+    std::cout << "Enter the max amount of threads (1-" << n << ") :";
     tty >> k;
 
 
+    // If statements that release threads based on which mode it is
     if (mode == CLI_MODE_ALL) {
 
         for (int i = 1; i <= k; ++i) {
@@ -160,7 +155,7 @@ int main (int argc, char* argv[]) {
 
 
 
-    // 
+    // Waits for all of the threads
     for (int i = 1; i <= n; ++i) {
         pthread_join(threads[i], nullptr);
     }

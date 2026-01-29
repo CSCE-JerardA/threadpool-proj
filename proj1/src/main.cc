@@ -2,16 +2,21 @@
 
 
 #include <iostream>
-#include <proj1/include/main.h> // Used to 
 #include <pthread.h>  // For my use of threads
 #include <vector>
-#include <proj1/lib/timings.h>
 #include <string>
 #include <fstream>  // For handling my files
 
+// For the provided libraries
+#include <proj1/lib/timings.h> // Used for 
+#include <proj1/lib/cli_parser.h>
+#include <proj1/lib/thread_log.h>
+#include <proj1/lib/sha256.h>
+
+
 using namespace std;
 
-// Structure for my threads
+// Structure for the data of my threads
 struct ThreadsArg {
     int index;
     int k;
@@ -31,5 +36,20 @@ void ThreadRoutine (void* arg) {
 
 int main (int argc, char* argv[]) {
 
-    return 0;
+    //
+    ThreadsArg* data = static_cast<ThreadsArg*>(arg)
+
+    // Statement that makes 
+    while (!data->released_flags[data->index]) {
+        Timings_SleepMs(1);
+    }
+
+    // If the index is higher than k it exits immediately
+    if (data->index > data->k) {
+        return nullptr;
+    }
+
+    
+
+
 }

@@ -10,7 +10,7 @@
 // For the provided libraries
 #include <proj1/lib/timings.h> 
 #include <proj1/lib/cli_parser.h>
-#include <proj1/lib/thread_log.h>
+#include <proj1/lib/thread_log.h> // For displaying; used like a print statement
 #include <proj1/lib/sha256.h>
 
 
@@ -84,10 +84,20 @@ void ThreadRoutine (void* arg) {
 
 }
 
-
+// Main function
 int main (int argc, char* argv[]) {
 
+    CliMode mode ;
+    uint32_t timeout_ms;
+    CliParse(argc, argv, &mode, &timeout_ms);
 
+
+    std::vector<std::string> file_rows;
+    std::string line;
+
+    while (std::getline(std::cin, line)) {
+
+    }
 
 
 }

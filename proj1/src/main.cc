@@ -8,10 +8,10 @@
 #include <fstream>  // For handling my files
 
 // For the provided libraries
-#include <proj1/lib/timings.h> 
-#include <proj1/lib/cli_parser.h>
+#include <proj1/lib/timings.h> // For getting my threads to wait
+#include <proj1/lib/cli_parser.h> // 
 #include <proj1/lib/thread_log.h> // For displaying; used like a print statement
-#include <proj1/lib/sha256.h>
+#include <proj1/lib/sha256.h>  // For output and doing the math
 
 
 using namespace std;
@@ -22,15 +22,23 @@ struct ThreadsArg {
     int k;  // The active threads
     bool* released_flags;  // Pointer for flagged array
 
-    CliMode mode;  // Strategy for release
+    CliMode mode;  // For releasing of threads
     const std::vector<std::string>* fdata;  // Pointer to the file data
 
+};
+
+
+struct Row {
+
+    std::string ids;
+    std::string values;
+    std::size_t iterations;
 };
 
 // Function for what the pthreads execute
 void ThreadRoutine (void* arg) {
     
-    //
+    // Works as a pointer the the variables within my struct
     ThreadsArg* data = static_cast<ThreadsArg*>(arg);
 
     // My local variables for connecting my variables through member access operators (arrows)
@@ -38,14 +46,16 @@ void ThreadRoutine (void* arg) {
     int my_id = data->index;
     int limit = data->k;
     bool* flags = data->released_flags;
-    CliMode strat = data->mode;
+    CliMode mode = data->mode;
     
 
 
-    // Waits until released
+    // Make threads wait until released
     while (!flags[limit]) {
         Timings_SleepMs(1);
     }
+
+    std::cout << my_id << "'s Starting Routine" << std::endl;
 
     // If the index is higher than k it exits immediately
     if (my_id > limit) {
@@ -53,10 +63,11 @@ void ThreadRoutine (void* arg) {
     }
 
     // Goes from thread to thread
-    if (strat == CLI_MODE_THREAD && my_id < limit) {
+    if (mode == CLI_MODE_THREAD && my_id < limit) {
         flags[limit + 1] = true;
     }
 
+    // I'm using the thread log library and statement the same as a print statement
     ThreadLog("[thread %d] started", my_id);
 
     // Local variable for file data pointer
@@ -87,17 +98,72 @@ void ThreadRoutine (void* arg) {
 // Main function
 int main (int argc, char* argv[]) {
 
+    // My variables
     CliMode mode ;
     uint32_t timeout_ms;
     CliParse(argc, argv, &mode, &timeout_ms);
 
-
+    
     std::vector<std::string> file_rows;
     std::string line;
 
     while (std::getline(std::cin, line)) {
+        if (!line.empty()) {
+            file_rows.push_back(line);
+        }
+    }
+
+    // The number of cores
+    int ncores = sysconf(_SC_NPROCESSORS_ONLN);
+
+    // Thread pointer created
+    pthread_t* threads = new pthread_t[n + 1];
+    bool* released_flags = new bool[n + 1];
+
+    for (int i = 0; i <= n; ++i) {
+        released_flags[i] = false;
+    }
+
+    for (int i = 1; i <= n; ++i) {
+        ThreadsArg* args = new ThreadsArg{i, 0, released_flags, mode, &file_rows};
+        pthread_create(&threads[i], nullptr, ThreadRoutine, args);
+    }
+
+    // Sets up prompt for K with tty
+    std::ifstream tty("/dev/tty");
+
+    int k;
+
+    std::cout << "Enter the max amount of threads 1-" << n << " :";
+    tty >> k;
+
+
+    if (mode == CLI_MODE_ALL) {
+
+        for (int i = 1; i <= k; ++i) {
+            released_flags[i] = true;
+        }
 
     }
 
+    else if (mode == CLI_MODE_RATE){
 
+        for (int i = 1; i <= k; ++i) {
+            released_flags[i] = true;
+            Timings_SleepMs(1); 
+        }
+    }
+
+    else if (mode == CLI_MODE_THREAD) {
+        released_flags[1] = true;
+    }
+
+
+
+    // 
+    for (int i = 1; i <= n; ++i) {
+        pthread_join(threads[i], nullptr);
+    }
+
+    return 0;
 }

@@ -30,7 +30,7 @@ struct ThreadsArg {
 
 
 // Function for what the pthreads execute
-void ThreadRoutine (void* arg) {
+void* ThreadRoutine (void* arg) {
     
     // Works as a pointer the the variables within my struct
     ThreadsArg* data = static_cast<ThreadsArg*>(arg);
@@ -59,7 +59,7 @@ void ThreadRoutine (void* arg) {
 
     // Goes from thread to thread
     if (mode == CLI_MODE_THREAD && my_id < current_k) {
-        flags[limit + 1] = true;
+        flags[my_id + 1] = true;
     }
 
     // I'm using the thread log library and statement the same as a print statement
@@ -73,7 +73,8 @@ void ThreadRoutine (void* arg) {
         int row_ind = my_id * m;
 
         // Statement that checks if we're out of rows
-        if (row_ind >= rows.size()) {
+        // The compiler literally made me change this part
+        if (row_ind >= (int)rows.size()) {
             break;
         }
 
@@ -97,6 +98,8 @@ int main (int argc, char* argv[]) {
     CliMode mode ;
     uint32_t timeout_ms;  // 
     CliParse(argc, argv, &mode, &timeout_ms);  // For parsing the command line
+
+    
 
     
     // Reads the file data from STDIN in rows
@@ -129,7 +132,7 @@ int main (int argc, char* argv[]) {
 
     // Sets up prompt for K with tty
     std::ifstream tty("/dev/tty");
-    std::cout << "Enter the max amount of threads (1-" << n << ") :";
+    std::cout << "Enter the max amount of threads (1-" << n << ") : ";
     tty >> k;
 
 

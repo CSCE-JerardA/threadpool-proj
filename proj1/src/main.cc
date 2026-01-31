@@ -26,6 +26,9 @@ struct ThreadsArg {
     CliMode mode;  // For releasing of threads
     const std::vector<std::string>* fdata;  // Pointer to the file data
 
+    // Added the row pointer
+    std::vector<Row>* results_table_ptr;
+
 };
 
 
@@ -92,6 +95,11 @@ void* ThreadRoutine (void* arg) {
 
         ComputeIterativeSha256Hex((uint8_t*)rows[row_ind].c_str(), rows[row_ind].length(), 100000, results);
 
+        data->result_ptr->at(row_ind).ids = to_string(row_ind);
+        data->result_ptr->at(row_ind).vals = to_string(row_ind);
+        data->result_ptr->at(row_ind).h_vals = to_string(row_ind);
+
+
         ThreadLog("Thread %d processing row %d", my_id, row_ind);
     }
 
@@ -137,7 +145,7 @@ int main (int argc, char* argv[]) {
 
     // This for loop creates all threads and make them wait
     for (int i = 1; i <= n; ++i) {
-        ThreadsArg* args = new ThreadsArg{i, &k, released_flags, mode, &file_rows};
+        ThreadsArg* args = new ThreadsArg{i, &k, released_flags, mode, &file_rows, &final_table};
         pthread_create(&threads[i], nullptr, ThreadRoutine, args);
     }
 

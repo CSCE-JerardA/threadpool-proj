@@ -29,6 +29,15 @@ struct ThreadsArg {
 };
 
 
+struct Row {
+
+    std::string ids;
+    std::string vals;
+    std::string h_vals;
+    std::size_t iterations;
+};
+
+
 // Function for what the pthreads execute
 void* ThreadRoutine (void* arg) {
     
@@ -100,11 +109,13 @@ int main (int argc, char* argv[]) {
     CliParse(argc, argv, &mode, &timeout_ms);  // For parsing the command line
 
     
-
+    
     
     // Reads the file data from STDIN in rows
     std::vector<std::string> file_rows;
     std::string line;
+
+    std::vector<Row> final_table(file_rows.size());
 
     while (std::getline(std::cin, line)) {
         if (!line.empty()) {
@@ -162,6 +173,20 @@ int main (int argc, char* argv[]) {
     // Waits for all of the threads
     for (int i = 1; i <= n; ++i) {
         pthread_join(threads[i], nullptr);
+    }
+
+    // Just to have the same setup for output as the example in the file
+    std::cout << "Thread Start Encryption..." << std::endl;
+
+    for (size_t i = 0; i < final_table.size(); ++i) {
+
+        // Only prints the rows that are actually getting processed
+        if (!final_table[i]ids.empty()) {
+            cout << final_table[i].ids << " "
+                 << final_table[i].vals << " "
+                 << final_table[i].h_vals << endl;
+
+        }
     }
 
     return 0;

@@ -65,7 +65,7 @@ void* ThreadRoutine (void* arg) {
     int current_k = *data->k_ptr;
 
     // If the index is higher than k it exits immediately
-    if (my_id > current_k) {
+    if (my_id > *(current_k)) {
         return nullptr;
     }
 
@@ -96,8 +96,8 @@ void* ThreadRoutine (void* arg) {
         ComputeIterativeSha256Hex((uint8_t*)rows[row_ind].c_str(), rows[row_ind].length(), 100000, results);
 
         data->result_ptr->at(row_ind).ids = to_string(row_ind);
-        data->result_ptr->at(row_ind).vals = to_string(row_ind);
-        data->result_ptr->at(row_ind).h_vals = to_string(row_ind);
+        data->result_ptr->at(row_ind).vals = rows(row_ind);
+        data->result_ptr->at(row_ind).h_vals = string(results);
 
 
         ThreadLog("Thread %d processing row %d", my_id, row_ind);
@@ -117,19 +117,23 @@ int main (int argc, char* argv[]) {
     CliParse(argc, argv, &mode, &timeout_ms);  // For parsing the command line
 
     
+
+    
     
     
     // Reads the file data from STDIN in rows
     std::vector<std::string> file_rows;
     std::string line;
 
-    std::vector<Row> final_table(file_rows.size());
+    
 
     while (std::getline(std::cin, line)) {
         if (!line.empty()) {
             file_rows.push_back(line);
         }
     }
+
+    std::vector<Row> final_table(file_rows.size());
 
     // The number of cores
     int n = ::get_nprocs();
@@ -158,7 +162,7 @@ int main (int argc, char* argv[]) {
     // If statements that release threads based on which mode it is
     if (mode == CLI_MODE_ALL) {
 
-        for (int i = 1; i <= k; ++i) {
+        for (int i = 1; i <= n; ++i) {
             released_flags[i] = true;
         }
 
@@ -166,14 +170,20 @@ int main (int argc, char* argv[]) {
 
     else if (mode == CLI_MODE_RATE){
 
-        for (int i = 1; i <= k; ++i) {
+        for (int i = 1; i <= n; ++i) {
             released_flags[i] = true;
-            Timings_SleepMs(1); 
+            if (i > k) {
+                Timings_SleepMs(1); 
+            }
         }
-    }
+
 
     else if (mode == CLI_MODE_THREAD) {
         released_flags[1] = true;
+
+        for (int i = k + 1; i <= n; ++i){
+            released_flags[i] = true;
+        }
     }
 
 

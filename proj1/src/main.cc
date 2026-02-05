@@ -17,6 +17,18 @@
 
 using namespace std;
 
+
+struct Row {
+
+    std::string ids;
+    std::string vals;
+    std::string h_vals;
+    std::size_t iterations;
+
+};
+
+
+
 // Structure for the data of my threads
 struct ThreadsArg {
     int index;  // The ID
@@ -32,13 +44,7 @@ struct ThreadsArg {
 };
 
 
-struct Row {
 
-    std::string ids;
-    std::string vals;
-    std::string h_vals;
-    std::size_t iterations;
-};
 
 
 // Function for what the pthreads execute
@@ -65,7 +71,7 @@ void* ThreadRoutine (void* arg) {
     int current_k = *data->k_ptr;
 
     // If the index is higher than k it exits immediately
-    if (my_id > *(current_k)) {
+    if (my_id > current_k) {
         return nullptr;
     }
 
@@ -95,9 +101,9 @@ void* ThreadRoutine (void* arg) {
 
         ComputeIterativeSha256Hex((uint8_t*)rows[row_ind].c_str(), rows[row_ind].length(), 100000, results);
 
-        data->result_ptr->at(row_ind).ids = to_string(row_ind);
-        data->result_ptr->at(row_ind).vals = rows(row_ind);
-        data->result_ptr->at(row_ind).h_vals = string(results);
+        data->results_table_ptr->at(row_ind).ids = to_string(row_ind);
+        data->results_table_ptr->at(row_ind).vals = rows[row_ind];
+        data->results_table_ptr->at(row_ind).h_vals = string(results);
 
 
         ThreadLog("Thread %d processing row %d", my_id, row_ind);
@@ -111,21 +117,16 @@ void* ThreadRoutine (void* arg) {
 // Main function
 int main (int argc, char* argv[]) {
 
-    
+
     CliMode mode ;
-    uint32_t timeout_ms;  // 
+    uint32_t timeout_ms;  //
     CliParse(argc, argv, &mode, &timeout_ms);  // For parsing the command line
 
-    
-
-    
-    
-    
     // Reads the file data from STDIN in rows
     std::vector<std::string> file_rows;
     std::string line;
 
-    
+
 
     while (std::getline(std::cin, line)) {
         if (!line.empty()) {
@@ -143,7 +144,7 @@ int main (int argc, char* argv[]) {
     std::vector<pthread_t> threads(n + 1);
     bool* released_flags = new bool[n + 1];
 
-    for (int i = 0; i <= num; ++i) {
+    for (int i = 0; i <= n; ++i) {
         released_flags[i] = false;
     }
 
@@ -155,8 +156,12 @@ int main (int argc, char* argv[]) {
 
     // Sets up prompt for K with tty
     std::ifstream tty("/dev/tty");
-    std::cout << "Enter the max amount of threads (1-" << n << ") : ";
+
+    // Statement for buffering problem displaying the statement
+    // Had to look this up on stack overflow
+    std::cout << "Enter max threads (1 - " << n << "): " << std::flush;
     tty >> k;
+    std::cout << std::endl;
 
 
     // If statements that release threads based on which mode it is
@@ -177,7 +182,7 @@ int main (int argc, char* argv[]) {
             }
         }
 
-
+    }
     else if (mode == CLI_MODE_THREAD) {
         released_flags[1] = true;
 
@@ -194,18 +199,21 @@ int main (int argc, char* argv[]) {
     }
 
     // Just to have the same setup for output as the example in the file
-    std::cout << "Thread Start Encryption..." << std::endl;
+    std::cout << "Thread Start Encryption!" << std::endl;
 
     for (size_t i = 0; i < final_table.size(); ++i) {
 
         // Only prints the rows that are actually getting processed
-        if (!final_table[i]ids.empty()) {
-            cout << final_table[i].ids << " "
-                 << final_table[i].vals << " "
-                 << final_table[i].h_vals << endl;
+        if (!final_table[i].ids.empty()) {
+
+           std::cout << final_table[i].ids << "    "
+                 << final_table[i].vals << "    "
+                 << final_table[i].h_vals << std::endl;
 
         }
     }
+
+    delete[] released_flags;
 
     return 0;
 }

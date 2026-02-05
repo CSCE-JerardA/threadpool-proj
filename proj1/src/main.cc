@@ -17,7 +17,7 @@
 
 using namespace std;
 
-
+// Used for the rows of output displayed
 struct Row {
 
     std::string ids;
@@ -50,7 +50,7 @@ struct ThreadsArg {
 // Function for what the pthreads execute
 void* ThreadRoutine (void* arg) {
     
-    // Works as a pointer the the variables within my struct
+    // Works as a pointer with the variables within my struct
     ThreadsArg* data = static_cast<ThreadsArg*>(arg);
 
     // My local variables for connecting my variables through member access operators (arrows)
@@ -65,6 +65,7 @@ void* ThreadRoutine (void* arg) {
         Timings_SleepMs(1);
     }
 
+    // I used this statement to show me the index or ID of the thread
     std::cout << my_id << "'s Starting Routine" << std::endl;
 
 
@@ -96,6 +97,7 @@ void* ThreadRoutine (void* arg) {
             break;
         }
 
+        // Definitely had to look this part up cause I wasn't understanding how it worked
         char results[65]; // Turns the data into a hexademical 
         // Becoming 64 characters long w/ a null terminator at the end
 
@@ -105,7 +107,7 @@ void* ThreadRoutine (void* arg) {
         data->results_table_ptr->at(row_ind).vals = rows[row_ind];
         data->results_table_ptr->at(row_ind).h_vals = string(results);
 
-
+        // Statement to show me what thread is processing what row
         ThreadLog("Thread %d processing row %d", my_id, row_ind);
     }
 
@@ -119,7 +121,7 @@ int main (int argc, char* argv[]) {
 
 
     CliMode mode ;
-    uint32_t timeout_ms;  //
+    uint32_t timeout_ms;  
     CliParse(argc, argv, &mode, &timeout_ms);  // For parsing the command line
 
     // Reads the file data from STDIN in rows
@@ -157,7 +159,8 @@ int main (int argc, char* argv[]) {
     // Sets up prompt for K with tty
     std::ifstream tty("/dev/tty");
 
-    // Statement for buffering problem displaying the statement
+    // Statement for buffering 
+    // I was having trouble displaying the statement. I would have to enter a number and then see the statement
     // Had to look this up on stack overflow
     std::cout << "Enter max threads (1 - " << n << "): " << std::flush;
     tty >> k;

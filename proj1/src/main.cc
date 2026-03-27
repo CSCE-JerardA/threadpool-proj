@@ -202,7 +202,7 @@ int main (int argc, char* argv[]) {
     }
 
     // Just to have the same setup for output as the example in the file
-    std::cout << "Thread Start Encryption!" << std::endl;
+    std::cout << "Thread   Start   Encryption!" << std::endl;
 
     for (size_t i = 0; i < final_table.size(); ++i) {
 
